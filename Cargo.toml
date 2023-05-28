@@ -1,0 +1,17 @@
+[package]
+name = "lift-let"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1.0.28"
+syn = { version = "2", features = [
+    "parsing",
+    "printing",
+    "proc-macro",
+    "full",
+    "visit-mut",
+], default-features = false }
