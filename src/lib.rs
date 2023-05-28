@@ -24,8 +24,8 @@ struct LiftLet {
     error: Option<syn::Error>,
 }
 
-fn is_let_attribute(attr: &syn::Attribute) -> bool {
-    attr.path().is_ident("let")
+fn is_lift_attribute(attr: &syn::Attribute) -> bool {
+    attr.path().is_ident("lift")
 }
 
 impl syn::visit_mut::VisitMut for LiftLet {
@@ -33,7 +33,7 @@ impl syn::visit_mut::VisitMut for LiftLet {
         if self.error.is_some() {
             return;
         }
-        if is_let_attribute(i) {
+        if is_lift_attribute(i) {
             self.error = Some(syn::Error::new(
                 i.span(),
                 "`#[let]` used in a non-recognizable way",
@@ -84,7 +84,7 @@ impl syn::visit_mut::VisitMut for LiftLet {
         }
         let mut has_let = false;
         i.attrs.retain_mut(|attr| {
-            if is_let_attribute(attr) {
+            if is_lift_attribute(attr) {
                 has_let = true;
                 false
             } else {
@@ -177,7 +177,7 @@ impl syn::visit_mut::VisitMut for LiftLet {
             | syn::Expr::Unsafe(syn::ExprUnsafe { attrs, .. })
             | syn::Expr::While(syn::ExprWhile { attrs, .. })
             | syn::Expr::Yield(syn::ExprYield { attrs, .. }) => {
-                if attrs.iter().any(is_let_attribute) {
+                if attrs.iter().any(is_lift_attribute) {
                     self.error = Some(syn::Error::new(
                         i.span(),
                         "`#[let]` used in an expression that is not parenthesized",
