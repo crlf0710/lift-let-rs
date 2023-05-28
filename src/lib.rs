@@ -194,6 +194,45 @@ impl syn::visit_mut::VisitMut for LiftLet {
     }
 }
 
+fn annot_lint_allow(item: &mut syn::Item) -> syn::Result<()> {
+    let item_span = item.span();
+    match item {
+        syn::Item::Verbatim(..) => {}
+        syn::Item::Const(syn::ItemConst { attrs, .. })
+        | syn::Item::Enum(syn::ItemEnum { attrs, .. })
+        | syn::Item::ExternCrate(syn::ItemExternCrate { attrs, .. })
+        | syn::Item::Fn(syn::ItemFn { attrs, .. })
+        | syn::Item::ForeignMod(syn::ItemForeignMod { attrs, .. })
+        | syn::Item::Impl(syn::ItemImpl { attrs, .. })
+        | syn::Item::Macro(syn::ItemMacro { attrs, .. })
+        | syn::Item::Mod(syn::ItemMod { attrs, .. })
+        | syn::Item::Static(syn::ItemStatic { attrs, .. })
+        | syn::Item::Struct(syn::ItemStruct { attrs, .. })
+        | syn::Item::Trait(syn::ItemTrait { attrs, .. })
+        | syn::Item::TraitAlias(syn::ItemTraitAlias { attrs, .. })
+        | syn::Item::Type(syn::ItemType { attrs, .. })
+        | syn::Item::Union(syn::ItemUnion { attrs, .. })
+        | syn::Item::Use(syn::ItemUse { attrs, .. }) => attrs.push(syn::Attribute {
+            meta: syn::Meta::List(syn::MetaList {
+                path: syn::Ident::new("allow", item_span.clone()).into(),
+                delimiter: syn::MacroDelimiter::Paren(Default::default()),
+                tokens: {
+                    let lint_path: syn::Path = syn::Ident::new("unused_parens", item_span).into();
+                    syn::punctuated::Punctuated::<_, syn::Token![,]>::from_iter(Some(lint_path))
+                        .into_token_stream()
+                },
+            }),
+            style: syn::AttrStyle::Outer,
+            pound_token: Default::default(),
+            bracket_token: Default::default(),
+        }),
+        _ => {
+            return Err(syn::Error::new(item_span, "new item type encountered"));
+        }
+    }
+    Ok(())
+}
+
 #[proc_macro_attribute]
 pub fn lift_let(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut item = syn::parse_macro_input!(item as syn::Item);
@@ -204,6 +243,11 @@ pub fn lift_let(_attr: TokenStream, item: TokenStream) -> TokenStream {
         error: None,
     };
     syn::visit_mut::visit_item_mut(&mut lift_let, &mut item);
+    if lift_let.error.is_none() {
+        if let Err(e) = annot_lint_allow(&mut item) {
+            lift_let.error = Some(e);
+        }
+    }
     if let Some(err) = lift_let.error {
         return err.to_compile_error().into();
     }
