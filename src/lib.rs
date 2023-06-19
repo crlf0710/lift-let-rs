@@ -36,7 +36,7 @@ impl syn::visit_mut::VisitMut for LiftLet {
         if is_lift_attribute(i) {
             self.error = Some(syn::Error::new(
                 i.span(),
-                "`#[let]` used in a non-recognizable way",
+                "`#[lift]` used in a non-recognizable way",
             ));
             return;
         }
@@ -180,7 +180,7 @@ impl syn::visit_mut::VisitMut for LiftLet {
                 if attrs.iter().any(is_lift_attribute) {
                     self.error = Some(syn::Error::new(
                         i.span(),
-                        "`#[let]` used in an expression that is not parenthesized",
+                        "`#[lift]` used in an expression that is not parenthesized",
                     ));
                     return;
                 }
